@@ -1,0 +1,1 @@
+"""DocMind API application package."""
