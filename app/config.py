@@ -9,10 +9,9 @@ class Settings(BaseSettings):
     """Runtime settings for DocMind API."""
 
     database_url: str = "postgresql+asyncpg://postgres:root@localhost:5432/docmind"
-    gemini_api_key: str = ""
-    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
-    embedding_model: str = "gemini-embedding-001"
-    chat_model: str = "gemini-2.0-flash-lite"
+    ollama_base_url: str = "http://localhost:11434/v1"
+    embedding_model: str = "nomic-embed-text"
+    chat_model: str = "qwen2.5:14b"
     chroma_persist_dir: str = "./chroma_store"
     upload_dir: str = "./uploads"
     max_file_size_mb: int = 20

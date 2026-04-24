@@ -1,0 +1,4 @@
+The Eiffel Tower is located in Paris, France.
+It was built in 1889 by Gustave Eiffel.
+It stands 330 meters tall and was the tallest man-made structure in the world for 41 years.
+The tower attracts about 7 million visitors per year.

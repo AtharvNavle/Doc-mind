@@ -1,10 +1,10 @@
-"""RAG pipeline orchestration service using Gemini models."""
+"""RAG pipeline orchestration service using Ollama models."""
 
 from __future__ import annotations
 
 import logging
 
-from openai import AsyncOpenAI, NotFoundError
+from openai import AsyncOpenAI
 
 from app.config import get_settings
 from app.schemas.document import QueryResponse, QuerySource
@@ -12,16 +12,11 @@ from app.services.embedder import embed_text
 from app.services.vector_store import search_document_chunks
 
 logger = logging.getLogger(__name__)
-CHAT_MODEL_FALLBACKS = [
-    "gemini-2.0-flash-lite",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-]
 
 settings = get_settings()
 client = AsyncOpenAI(
-    api_key=settings.gemini_api_key,
-    base_url=settings.gemini_base_url,
+    api_key="ollama",
+    base_url=settings.ollama_base_url,
 )
 
 
@@ -50,38 +45,16 @@ async def run_rag_query(document_id: str, question: str) -> QueryResponse:
     )
     user_prompt = f"Context:\n{context}\n\nQuestion: {question}"
 
-    completion = None
-    model_candidates = [settings.chat_model, *CHAT_MODEL_FALLBACKS]
-    used_models: list[str] = []
-
-    for model_name in model_candidates:
-        if model_name in used_models:
-            continue
-        used_models.append(model_name)
-        try:
-            completion = await client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0,
-            )
-            if model_name != settings.chat_model:
-                logger.warning(
-                    "Chat model '%s' unavailable, used fallback '%s'.",
-                    settings.chat_model,
-                    model_name,
-                )
-            break
-        except NotFoundError:
-            logger.warning("Chat model '%s' not found, trying next fallback.", model_name)
-
-    if completion is None:
-        raise RuntimeError("No compatible Gemini chat model found. Update CHAT_MODEL in .env.")
+    completion = await client.chat.completions.create(
+        model=settings.chat_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0,
+    )
 
     answer = completion.choices[0].message.content or "I don't know."
-
     sources = [QuerySource(**item) for item in top_chunks]
     logger.info("RAG query completed for document '%s'", document_id)
     return QueryResponse(answer=answer, sources=sources)
