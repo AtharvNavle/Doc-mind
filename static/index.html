@@ -6,840 +6,521 @@
   <title>DocMind</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --border: #2e3247;
-      --accent: #6c63ff;
-      --accent-hover: #857dff;
-      --green: #22c55e;
-      --yellow: #f59e0b;
-      --red: #ef4444;
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --radius: 12px;
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+      --border: #2e3247; --accent: #6c63ff; --accent-h: #857dff;
+      --green: #22c55e; --yellow: #f59e0b; --red: #ef4444;
+      --text: #e2e8f0; --muted: #64748b; --r: 12px;
     }
+    body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    /* header */
+    header { display:flex; align-items:center; gap:12px; padding:14px 24px; border-bottom:1px solid var(--border); background:var(--surface); flex-shrink:0; }
+    .logo { width:34px; height:34px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+    header h1 { font-size:19px; font-weight:700; }
+    header small { color:var(--muted); font-size:12px; margin-left:4px; }
+    #healthDot { width:8px; height:8px; border-radius:50%; background:var(--red); box-shadow:0 0 6px var(--red); margin-left:auto; transition:all .4s; }
+    #healthDot.online { background:var(--green); box-shadow:0 0 6px var(--green); }
 
-    /* ── Header ── */
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 28px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      flex-shrink: 0;
-    }
-    header .logo {
-      width: 36px; height: 36px;
-      background: var(--accent);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-    header span { color: var(--muted); font-size: 13px; margin-left: 4px; }
-    .health-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--green);
-      margin-left: auto;
-      box-shadow: 0 0 6px var(--green);
-    }
-    .health-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    /* layout */
+    .layout { display:grid; grid-template-columns:300px 1fr; flex:1; overflow:hidden; }
 
-    /* ── Layout ── */
-    .layout {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      flex: 1;
-      overflow: hidden;
-    }
+    /* sidebar */
+    aside { background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    .upload-section { padding:18px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .upload-section .lbl { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); display:block; margin-bottom:12px; }
 
-    .sidebar-section {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
+    /* THE FIX: label triggers file input natively — no JS needed */
+    #fileInput { display:none; }
+    .drop-label {
+      display:block; border:2px dashed var(--border); border-radius:var(--r);
+      padding:20px 12px; text-align:center; cursor:pointer; transition:all .2s;
     }
-    .sidebar-section h2 {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
+    .drop-label:hover { border-color:var(--accent); background:rgba(108,99,255,.07); }
+    .drop-label.has-file { border-color:var(--accent); background:rgba(108,99,255,.1); }
+    .drop-label .di { font-size:26px; margin-bottom:6px; }
+    .drop-label p { font-size:12px; color:var(--muted); line-height:1.5; }
+    .drop-label p strong { color:var(--text); }
+    #fileNameDisplay { font-size:12px; color:var(--accent); margin-top:6px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none; }
 
-    /* Upload zone */
-    .upload-zone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 24px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-    }
-    .upload-zone:hover, .upload-zone.drag-over {
-      border-color: var(--accent);
-      background: rgba(108,99,255,0.06);
-    }
-    .upload-zone input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer;
-    }
-    .upload-zone .icon { font-size: 28px; margin-bottom: 8px; }
-    .upload-zone p { font-size: 13px; color: var(--muted); line-height: 1.5; }
-    .upload-zone p strong { color: var(--text); }
+    .prog-wrap { margin-top:8px; display:none; }
+    .prog-wrap.show { display:block; }
+    .prog-bar { height:3px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .prog-fill { height:100%; background:var(--accent); width:0%; transition:width .3s; border-radius:3px; }
+    .prog-lbl { font-size:11px; color:var(--muted); margin-top:4px; }
 
     .upload-btn {
-      width: 100%;
-      margin-top: 12px;
-      padding: 10px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width:100%; margin-top:10px; padding:9px; background:var(--accent);
+      color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600;
+      cursor:pointer; transition:background .2s; display:flex; align-items:center; justify-content:center; gap:6px;
     }
-    .upload-btn:hover:not(:disabled) { background: var(--accent-hover); }
-    .upload-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .upload-btn:hover { background:var(--accent-h); }
+    .upload-btn:disabled { opacity:.45; cursor:not-allowed; }
 
-    /* Progress bar */
-    .progress-wrap { margin-top: 10px; display: none; }
-    .progress-wrap.show { display: block; }
-    .progress-bar {
-      height: 4px; background: var(--border); border-radius: 4px; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%; background: var(--accent); width: 0%;
-      transition: width 0.3s;
-      border-radius: 4px;
-    }
-    .progress-label { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    /* doc list */
+    .doc-header { padding:14px 16px 6px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .doc-header span { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); }
+    .refresh-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; line-height:1; padding:2px 4px; border-radius:4px; }
+    .refresh-btn:hover { color:var(--text); }
 
-    /* Document list */
-    .doc-list-wrap {
-      flex: 1; overflow-y: auto; padding: 12px;
-    }
-    .doc-list-wrap::-webkit-scrollbar { width: 4px; }
-    .doc-list-wrap::-webkit-scrollbar-track { background: transparent; }
-    .doc-list-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .doc-list { flex:1; overflow-y:auto; padding:6px 10px 10px; }
+    .doc-list::-webkit-scrollbar { width:3px; }
+    .doc-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
-    .doc-empty {
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      padding: 40px 16px;
-    }
-    .doc-empty .icon { font-size: 32px; margin-bottom: 8px; }
+    .empty-state { text-align:center; color:var(--muted); font-size:12px; padding:32px 12px; }
+    .empty-state .ei { font-size:28px; margin-bottom:8px; }
 
     .doc-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.15s;
-      margin-bottom: 4px;
-      border: 1px solid transparent;
+      display:flex; align-items:center; gap:9px; padding:9px 10px;
+      border-radius:8px; cursor:pointer; transition:background .15s;
+      margin-bottom:3px; border:1px solid transparent;
     }
-    .doc-item:hover { background: var(--surface2); }
-    .doc-item.active {
-      background: rgba(108,99,255,0.15);
-      border-color: rgba(108,99,255,0.4);
-    }
-    .doc-icon { font-size: 20px; flex-shrink: 0; }
-    .doc-info { flex: 1; min-width: 0; }
-    .doc-name {
-      font-size: 13px; font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .doc-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .status-badge {
-      font-size: 10px; font-weight: 700;
-      padding: 2px 7px; border-radius: 20px;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      flex-shrink: 0;
-    }
-    .status-badge.ready { background: rgba(34,197,94,0.15); color: var(--green); }
-    .status-badge.processing { background: rgba(245,158,11,0.15); color: var(--yellow); }
-    .status-badge.failed { background: rgba(239,68,68,0.15); color: var(--red); }
+    .doc-item:hover { background:var(--surface2); }
+    .doc-item.active { background:rgba(108,99,255,.15); border-color:rgba(108,99,255,.35); }
+    .doc-item .di { font-size:18px; flex-shrink:0; }
+    .doc-item .info { flex:1; min-width:0; }
+    .doc-item .name { font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .doc-item .meta { font-size:11px; color:var(--muted); margin-top:1px; }
+    .badge { font-size:10px; font-weight:700; padding:2px 6px; border-radius:20px; text-transform:uppercase; letter-spacing:.3px; flex-shrink:0; }
+    .badge.ready { background:rgba(34,197,94,.15); color:var(--green); }
+    .badge.processing { background:rgba(245,158,11,.15); color:var(--yellow); }
+    .badge.failed { background:rgba(239,68,68,.15); color:var(--red); }
+    .del-btn { background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:2px 4px; border-radius:4px; opacity:0; flex-shrink:0; }
+    .doc-item:hover .del-btn { opacity:1; }
+    .del-btn:hover { color:var(--red); }
 
-    .doc-delete {
-      background: none; border: none; cursor: pointer;
-      color: var(--muted); font-size: 14px; padding: 2px 4px;
-      border-radius: 4px; transition: color 0.15s;
-      flex-shrink: 0; opacity: 0;
-    }
-    .doc-item:hover .doc-delete { opacity: 1; }
-    .doc-delete:hover { color: var(--red); }
+    /* chat */
+    main { display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
 
-    /* ── Chat panel ── */
-    .chat-panel {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: var(--bg);
-    }
+    .chat-top { padding:14px 22px; border-bottom:1px solid var(--border); background:var(--surface); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .chat-top .ct-icon { font-size:20px; }
+    #ctName { font-size:14px; font-weight:600; }
+    #ctMeta { font-size:11px; color:var(--muted); margin-top:1px; }
 
-    .chat-header {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      display: flex; align-items: center; gap: 12px;
-      flex-shrink: 0;
-    }
-    .chat-header .selected-doc {
-      font-size: 14px; font-weight: 600;
-    }
-    .chat-header .selected-meta {
-      font-size: 12px; color: var(--muted); margin-left: auto;
-    }
+    .messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:18px; }
+    .messages::-webkit-scrollbar { width:3px; }
+    .messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .chat-messages::-webkit-scrollbar { width: 4px; }
-    .chat-messages::-webkit-scrollbar-track { background: transparent; }
-    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .empty-chat { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); text-align:center; gap:10px; }
+    .empty-chat .bi { font-size:52px; opacity:.3; }
+    .empty-chat h3 { font-size:17px; color:var(--text); opacity:.4; }
+    .empty-chat p { font-size:12px; max-width:260px; line-height:1.6; }
 
-    .chat-empty {
-      flex: 1; display: flex;
-      flex-direction: column; align-items: center; justify-content: center;
-      color: var(--muted); text-align: center; gap: 12px;
-    }
-    .chat-empty .big-icon { font-size: 56px; opacity: 0.4; }
-    .chat-empty h3 { font-size: 18px; color: var(--text); opacity: 0.5; }
-    .chat-empty p { font-size: 13px; max-width: 300px; line-height: 1.6; }
+    .msg { display:flex; flex-direction:column; gap:3px; max-width:700px; }
+    .msg.user { align-self:flex-end; align-items:flex-end; }
+    .msg.bot { align-self:flex-start; align-items:flex-start; }
+    .msg-who { font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+    .bubble { padding:11px 15px; border-radius:11px; font-size:13px; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+    .msg.user .bubble { background:var(--accent); color:#fff; border-bottom-right-radius:3px; }
+    .msg.bot .bubble { background:var(--surface); border:1px solid var(--border); border-bottom-left-radius:3px; }
+    .sources { margin-top:7px; display:flex; flex-wrap:wrap; gap:5px; }
+    .src-chip { font-size:11px; background:var(--surface2); border:1px solid var(--border); border-radius:5px; padding:2px 7px; color:var(--muted); cursor:pointer; transition:all .15s; }
+    .src-chip:hover { border-color:var(--accent); color:var(--accent); }
 
-    /* Messages */
-    .msg { display: flex; flex-direction: column; gap: 4px; max-width: 760px; }
-    .msg.user { align-self: flex-end; align-items: flex-end; }
-    .msg.assistant { align-self: flex-start; align-items: flex-start; }
+    .typing { display:flex; gap:4px; align-items:center; padding:12px 15px; background:var(--surface); border:1px solid var(--border); border-radius:11px; border-bottom-left-radius:3px; width:fit-content; }
+    .td { width:6px; height:6px; border-radius:50%; background:var(--muted); animation:bob 1.2s infinite ease-in-out; }
+    .td:nth-child(2){animation-delay:.2s} .td:nth-child(3){animation-delay:.4s}
+    @keyframes bob { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
 
-    .msg-label {
-      font-size: 11px; color: var(--muted);
-      font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 2px;
+    .input-bar { padding:14px 20px; border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; }
+    .input-row { display:flex; gap:8px; align-items:flex-end; }
+    #qInput {
+      flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:9px;
+      padding:11px 14px; color:var(--text); font-size:13px; font-family:inherit;
+      resize:none; outline:none; min-height:44px; max-height:130px; transition:border-color .2s; line-height:1.5;
     }
+    #qInput:focus { border-color:var(--accent); }
+    #qInput::placeholder { color:var(--muted); }
+    #qInput:disabled { opacity:.5; cursor:not-allowed; }
+    #sendBtn {
+      width:44px; height:44px; background:var(--accent); border:none; border-radius:9px;
+      color:#fff; font-size:17px; cursor:pointer; transition:background .2s, transform .1s;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    #sendBtn:hover:not(:disabled) { background:var(--accent-h); }
+    #sendBtn:active:not(:disabled) { transform:scale(.94); }
+    #sendBtn:disabled { opacity:.35; cursor:not-allowed; }
+    #hint { font-size:11px; color:var(--muted); margin-top:7px; text-align:center; }
 
-    .msg-bubble {
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .msg.user .msg-bubble {
-      background: var(--accent);
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-    .msg.assistant .msg-bubble {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 4px;
-    }
+    /* source modal */
+    #srcOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; align-items:center; justify-content:center; }
+    #srcOverlay.show { display:flex; }
+    #srcBox { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:22px; max-width:520px; width:92%; max-height:65vh; overflow-y:auto; }
+    #srcBox h3 { font-size:13px; color:var(--muted); margin-bottom:10px; }
+    #srcBox p { font-size:13px; line-height:1.7; white-space:pre-wrap; }
+    .close-btn { float:right; background:none; border:none; color:var(--muted); font-size:17px; cursor:pointer; margin-top:-4px; }
+    .close-btn:hover { color:var(--text); }
 
-    .msg-sources {
-      margin-top: 8px;
-      display: flex; flex-wrap: wrap; gap: 6px;
-    }
-    .source-chip {
-      font-size: 11px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 3px 8px;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .source-chip:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    /* Typing indicator */
-    .typing-indicator {
-      display: flex; gap: 5px; align-items: center;
-      padding: 14px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      border-bottom-left-radius: 4px;
-      width: fit-content;
-    }
-    .typing-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--muted);
-      animation: bounce 1.2s infinite ease-in-out;
-    }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30% { transform: translateY(-6px); opacity: 1; }
-    }
-
-    /* Input bar */
-    .chat-input-wrap {
-      padding: 16px 24px;
-      border-top: 1px solid var(--border);
-      background: var(--surface);
-      flex-shrink: 0;
-    }
-    .chat-input-row {
-      display: flex; gap: 10px; align-items: flex-end;
-    }
-    .chat-input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: inherit;
-      resize: none;
-      outline: none;
-      min-height: 46px;
-      max-height: 140px;
-      transition: border-color 0.2s;
-      line-height: 1.5;
-    }
-    .chat-input:focus { border-color: var(--accent); }
-    .chat-input::placeholder { color: var(--muted); }
-    .chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .send-btn {
-      width: 46px; height: 46px;
-      background: var(--accent);
-      border: none; border-radius: 10px;
-      color: #fff; font-size: 18px;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .send-btn:hover:not(:disabled) { background: var(--accent-hover); }
-    .send-btn:active:not(:disabled) { transform: scale(0.95); }
-    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .input-hint {
-      font-size: 11px; color: var(--muted);
-      margin-top: 8px; text-align: center;
-    }
-
-    /* Source tooltip modal */
-    .source-modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 100;
-      align-items: center; justify-content: center;
-    }
-    .source-modal-overlay.show { display: flex; }
-    .source-modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      max-width: 560px; width: 90%;
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-    .source-modal h3 { font-size: 14px; margin-bottom: 12px; color: var(--muted); }
-    .source-modal p {
-      font-size: 13px; line-height: 1.7;
-      white-space: pre-wrap; color: var(--text);
-    }
-    .source-modal-close {
-      float: right; background: none; border: none;
-      color: var(--muted); font-size: 18px; cursor: pointer;
-      margin-top: -4px;
-    }
-    .source-modal-close:hover { color: var(--text); }
-
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 24px; right: 24px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 12px 18px;
-      border-radius: 10px;
-      font-size: 13px;
-      opacity: 0; transform: translateY(10px);
-      transition: all 0.3s;
-      z-index: 200;
-      max-width: 320px;
-    }
-    #toast.show { opacity: 1; transform: translateY(0); }
-    #toast.error { border-color: var(--red); color: var(--red); }
-    #toast.success { border-color: var(--green); color: var(--green); }
+    /* toast */
+    #toast { position:fixed; bottom:20px; right:20px; background:var(--surface); border:1px solid var(--border); padding:10px 16px; border-radius:9px; font-size:13px; opacity:0; transform:translateY(8px); transition:all .25s; z-index:200; max-width:300px; pointer-events:none; }
+    #toast.show { opacity:1; transform:translateY(0); }
+    #toast.ok { border-color:var(--green); color:var(--green); }
+    #toast.err { border-color:var(--red); color:var(--red); }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo">🧠</div>
-  <h1>DocMind</h1>
-  <span>RAG Document Q&A</span>
-  <div class="health-dot offline" id="healthDot" title="Checking server..."></div>
+  <h1>DocMind</h1><small>RAG Q&amp;A</small>
+  <div id="healthDot" title="Checking…"></div>
 </header>
 
 <div class="layout">
+
   <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <h2>Upload Document</h2>
-      <div class="upload-zone" id="uploadZone">
-        <input type="file" id="fileInput" accept=".pdf,.txt" />
-        <div class="icon">📄</div>
-        <p><strong>Click or drag & drop</strong><br>PDF or TXT · Max 20 MB</p>
+  <aside>
+    <div class="upload-section">
+      <span class="lbl">Upload Document</span>
+
+      <!-- Native label → input: most reliable file picker trigger in all browsers -->
+      <input type="file" id="fileInput" accept=".pdf,.txt" />
+      <label for="fileInput" class="drop-label" id="dropLabel">
+        <div class="di">📄</div>
+        <p><strong>Click to choose</strong> or drag &amp; drop<br>PDF or TXT · max 20 MB</p>
+      </label>
+      <div id="fileNameDisplay"></div>
+
+      <div class="prog-wrap" id="progWrap">
+        <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+        <div class="prog-lbl" id="progLbl">Uploading…</div>
       </div>
-      <div class="progress-wrap" id="progressWrap">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-label" id="progressLabel">Uploading…</div>
-      </div>
-      <button class="upload-btn" id="uploadBtn" disabled>
-        <span>⬆</span> Upload
-      </button>
+
+      <button class="upload-btn" id="uploadBtn" disabled>⬆ Upload</button>
     </div>
 
-    <div style="padding: 16px 20px 8px; flex-shrink: 0;">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">Documents</span>
-        <button onclick="loadDocuments()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;" title="Refresh">↻</button>
-      </div>
+    <div class="doc-header">
+      <span>Documents</span>
+      <button class="refresh-btn" id="refreshBtn" title="Refresh">↻</button>
     </div>
-    <div class="doc-list-wrap" id="docList">
-      <div class="doc-empty">
-        <div class="icon">📂</div>
-        <p>No documents yet.<br>Upload a PDF or TXT to get started.</p>
-      </div>
+    <div class="doc-list" id="docList">
+      <div class="empty-state"><div class="ei">📂</div><p>No documents yet</p></div>
     </div>
   </aside>
 
-  <!-- Chat panel -->
-  <main class="chat-panel">
-    <div class="chat-header" id="chatHeader">
-      <span style="font-size:22px;">💬</span>
+  <!-- Chat -->
+  <main>
+    <div class="chat-top">
+      <span class="ct-icon">💬</span>
       <div>
-        <div class="selected-doc" id="selectedDocName">No document selected</div>
-        <div style="font-size:12px;color:var(--muted);" id="selectedDocMeta">Select a ready document from the sidebar</div>
+        <div id="ctName">No document selected</div>
+        <div id="ctMeta">Pick a ready document from the sidebar</div>
       </div>
     </div>
 
-    <div class="chat-messages" id="chatMessages">
-      <div class="chat-empty" id="chatEmpty">
-        <div class="big-icon">🧠</div>
+    <div class="messages" id="messages">
+      <div class="empty-chat" id="emptyChat">
+        <div class="bi">🧠</div>
         <h3>Ask anything about your document</h3>
-        <p>Upload a document and select it from the sidebar, then ask a question in natural language.</p>
+        <p>Upload a file, wait for it to be ready, then select it and start asking questions.</p>
       </div>
     </div>
 
-    <div class="chat-input-wrap">
-      <div class="chat-input-row">
-        <textarea
-          class="chat-input"
-          id="chatInput"
-          placeholder="Select a document first…"
-          rows="1"
-          disabled
-        ></textarea>
-        <button class="send-btn" id="sendBtn" disabled title="Send">➤</button>
+    <div class="input-bar">
+      <div class="input-row">
+        <textarea id="qInput" rows="1" placeholder="Select a ready document first…" disabled></textarea>
+        <button id="sendBtn" disabled title="Send (Enter)">➤</button>
       </div>
-      <div class="input-hint" id="inputHint">Select a ready document to start asking questions</div>
+      <div id="hint">Select a ready document to unlock the chat</div>
     </div>
   </main>
 </div>
 
 <!-- Source modal -->
-<div class="source-modal-overlay" id="sourceModal">
-  <div class="source-modal">
-    <button class="source-modal-close" onclick="closeSourceModal()">✕</button>
-    <h3 id="sourceModalTitle">Source Chunk</h3>
-    <p id="sourceModalBody"></p>
+<div id="srcOverlay">
+  <div id="srcBox">
+    <button class="close-btn" id="closeModal">✕</button>
+    <h3 id="srcTitle">Source chunk</h3>
+    <p id="srcBody"></p>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-  const API = 'http://localhost:8000';
-  let selectedDoc = null;
-  let pollingTimers = {};
-  let selectedFile = null;
+const API = 'http://localhost:8000';
 
-  // ── Health check ──
-  async function checkHealth() {
-    try {
-      const r = await fetch(`${API}/health`);
-      if (r.ok) {
-        document.getElementById('healthDot').classList.remove('offline');
-        document.getElementById('healthDot').title = 'Server online';
-      } else throw new Error();
-    } catch {
-      document.getElementById('healthDot').classList.add('offline');
-      document.getElementById('healthDot').title = 'Server offline';
-    }
+// ── State ──────────────────────────────────────────────────────────────
+let docs = {};          // id → doc object
+let activeId = null;
+let pollers = {};
+let pendingFile = null;
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtBytes(b){ if(b<1024)return b+'B'; if(b<1048576)return(b/1024).toFixed(1)+'KB'; return(b/1048576).toFixed(1)+'MB'; }
+
+function toast(msg, type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='show '+(type==='ok'?'ok':type==='err'?'err':'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='',3500);
+}
+
+// ── Health ───────────────────────────────────────────────────────────────
+async function checkHealth(){
+  const dot=document.getElementById('healthDot');
+  try{ const r=await fetch(`${API}/health`); dot.className=r.ok?'online':''; }
+  catch{ dot.className=''; }
+}
+checkHealth(); setInterval(checkHealth,15000);
+
+// ── File picker (label+input is native — no JS click needed) ─────────────
+const fileInput    = document.getElementById('fileInput');
+const dropLabel    = document.getElementById('dropLabel');
+const fileDisplay  = document.getElementById('fileNameDisplay');
+const uploadBtn    = document.getElementById('uploadBtn');
+
+fileInput.addEventListener('change', () => {
+  pendingFile = fileInput.files[0] || null;
+  if(pendingFile){
+    dropLabel.classList.add('has-file');
+    fileDisplay.textContent = pendingFile.name;
+    fileDisplay.style.display = 'block';
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = '⬆ Upload';
+  } else {
+    resetUploadUI();
   }
+});
 
-  // ── Toast ──
-  function showToast(msg, type = '') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'show ' + type;
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.className = '', 3500);
+// Drag & drop onto the label
+dropLabel.addEventListener('dragover', e=>{ e.preventDefault(); dropLabel.style.borderColor='var(--accent)'; });
+dropLabel.addEventListener('dragleave', ()=>{ dropLabel.style.borderColor=''; });
+dropLabel.addEventListener('drop', e=>{
+  e.preventDefault(); dropLabel.style.borderColor='';
+  const f = e.dataTransfer.files[0];
+  if(f && (f.type==='application/pdf' || f.name.toLowerCase().endsWith('.txt'))){
+    pendingFile = f;
+    dropLabel.classList.add('has-file');
+    fileDisplay.textContent = f.name;
+    fileDisplay.style.display = 'block';
+    uploadBtn.disabled = false;
+  } else {
+    toast('Only PDF and TXT files supported.','err');
   }
+});
 
-  // ── File selection ──
-  const fileInput = document.getElementById('fileInput');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const uploadZone = document.getElementById('uploadZone');
+function resetUploadUI(){
+  pendingFile = null;
+  fileInput.value = '';
+  dropLabel.classList.remove('has-file');
+  fileDisplay.style.display = 'none';
+  fileDisplay.textContent = '';
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = '⬆ Upload';
+}
 
-  fileInput.addEventListener('change', () => {
-    selectedFile = fileInput.files[0] || null;
-    updateUploadBtn();
-  });
+// ── Upload ────────────────────────────────────────────────────────────────
+uploadBtn.addEventListener('click', async () => {
+  if(!pendingFile) return;
+  uploadBtn.disabled = true;
+  const pw=document.getElementById('progWrap'), fill=document.getElementById('progFill'), lbl=document.getElementById('progLbl');
+  pw.classList.add('show'); fill.style.width='15%'; lbl.textContent='Uploading…';
 
-  function updateUploadBtn() {
-    if (selectedFile) {
-      uploadBtn.disabled = false;
-      uploadBtn.innerHTML = `<span>⬆</span> Upload "${selectedFile.name.length > 24 ? selectedFile.name.slice(0,24)+'…' : selectedFile.name}"`;
-    } else {
-      uploadBtn.disabled = true;
-      uploadBtn.innerHTML = `<span>⬆</span> Upload`;
-    }
+  const form = new FormData();
+  form.append('file', pendingFile);
+  try {
+    fill.style.width='50%';
+    const r = await fetch(`${API}/documents/upload`,{method:'POST',body:form});
+    fill.style.width='85%';
+    if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.detail||`HTTP ${r.status}`); }
+    const doc = await r.json();
+    fill.style.width='100%'; lbl.textContent='Done — processing…';
+    toast('Uploaded! Embedding in background…','ok');
+    setTimeout(()=>{ pw.classList.remove('show'); fill.style.width='0'; },2000);
+    resetUploadUI();
+    upsertDoc(doc);
+    renderDocList();
+    startPoller(doc.id);
+  } catch(e){
+    fill.style.width='0'; pw.classList.remove('show');
+    toast('Upload failed: '+e.message,'err');
+    uploadBtn.disabled = false;
   }
+});
 
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f && (f.type === 'application/pdf' || f.name.endsWith('.txt'))) {
-      selectedFile = f;
-      updateUploadBtn();
-    } else {
-      showToast('Only PDF and TXT files are supported.', 'error');
-    }
-  });
+// ── Documents ─────────────────────────────────────────────────────────────
+async function loadDocs(){
+  try{
+    const r=await fetch(`${API}/documents`);
+    if(!r.ok) return;
+    const list=await r.json();
+    docs={};
+    list.forEach(d=>docs[d.id]=d);
+    renderDocList();
+    list.filter(d=>d.status==='processing').forEach(d=>startPoller(d.id));
+  } catch{}
+}
 
-  // ── Upload ──
-  uploadBtn.addEventListener('click', uploadFile);
+function upsertDoc(d){ docs[d.id]=d; }
 
-  async function uploadFile() {
-    if (!selectedFile) return;
-    uploadBtn.disabled = true;
-    const pw = document.getElementById('progressWrap');
-    const fill = document.getElementById('progressFill');
-    const label = document.getElementById('progressLabel');
-    pw.classList.add('show');
-    fill.style.width = '10%';
-    label.textContent = 'Uploading…';
-
-    const form = new FormData();
-    form.append('file', selectedFile);
-
-    try {
-      fill.style.width = '40%';
-      const r = await fetch(`${API}/documents/upload`, { method: 'POST', body: form });
-      fill.style.width = '80%';
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${r.status}`);
-      }
-      const doc = await r.json();
-      fill.style.width = '100%';
-      label.textContent = 'Upload complete — processing…';
-      showToast('Uploaded! Processing in background…', 'success');
-      selectedFile = null;
-      fileInput.value = '';
-      updateUploadBtn();
-      setTimeout(() => { pw.classList.remove('show'); fill.style.width = '0'; }, 2000);
-      loadDocuments();
-      startPolling(doc.id);
-    } catch (e) {
-      fill.style.width = '0';
-      pw.classList.remove('show');
-      showToast('Upload failed: ' + e.message, 'error');
-      uploadBtn.disabled = false;
-    }
+function renderDocList(){
+  const el=document.getElementById('docList');
+  const ids=Object.keys(docs);
+  if(!ids.length){
+    el.innerHTML='<div class="empty-state"><div class="ei">📂</div><p>No documents yet</p></div>';
+    return;
   }
-
-  // ── Load documents ──
-  async function loadDocuments() {
-    try {
-      const r = await fetch(`${API}/documents`);
-      if (!r.ok) throw new Error();
-      const docs = await r.json();
-      renderDocList(docs);
-      docs.filter(d => d.status === 'processing').forEach(d => startPolling(d.id));
-    } catch {
-      // silently ignore
-    }
-  }
-
-  function renderDocList(docs) {
-    const el = document.getElementById('docList');
-    if (!docs.length) {
-      el.innerHTML = `<div class="doc-empty"><div class="icon">📂</div><p>No documents yet.<br>Upload a PDF or TXT to get started.</p></div>`;
-      return;
-    }
-    el.innerHTML = docs.map(d => {
-      const icon = d.filename.endsWith('.pdf') ? '📕' : '📄';
-      const size = d.file_size_bytes ? formatBytes(d.file_size_bytes) : '';
-      const active = selectedDoc && selectedDoc.id === d.id ? 'active' : '';
-      return `
-        <div class="doc-item ${active}" onclick="selectDoc(${JSON.stringify(JSON.stringify(d))})" id="doc-${d.id}">
-          <span class="doc-icon">${icon}</span>
-          <div class="doc-info">
-            <div class="doc-name" title="${escHtml(d.filename)}">${escHtml(d.filename)}</div>
-            <div class="doc-meta">${size}</div>
-          </div>
-          <span class="status-badge ${d.status}">${d.status}</span>
-          <button class="doc-delete" onclick="deleteDoc(event,'${d.id}')" title="Delete">🗑</button>
-        </div>`;
-    }).join('');
-  }
-
-  function selectDoc(jsonStr) {
-    const doc = JSON.parse(jsonStr);
-    selectedDoc = doc;
-    document.querySelectorAll('.doc-item').forEach(el => el.classList.remove('active'));
-    const el = document.getElementById(`doc-${doc.id}`);
-    if (el) el.classList.add('active');
-
-    document.getElementById('selectedDocName').textContent = doc.filename;
-    document.getElementById('selectedDocMeta').textContent =
-      doc.status === 'ready' ? 'Ready · Ask a question below' :
-      doc.status === 'processing' ? 'Still processing — please wait…' :
-      'Processing failed';
-
-    const ready = doc.status === 'ready';
-    const input = document.getElementById('chatInput');
-    const btn = document.getElementById('sendBtn');
-    input.disabled = !ready;
-    btn.disabled = !ready;
-    input.placeholder = ready ? 'Ask a question about this document…' : 'Document is not ready yet…';
-    document.getElementById('inputHint').textContent = ready
-      ? 'Press Enter to send · Shift+Enter for new line'
-      : 'Waiting for document to finish processing…';
-
-    clearMessages();
-  }
-
-  // ── Polling ──
-  function startPolling(docId) {
-    if (pollingTimers[docId]) return;
-    pollingTimers[docId] = setInterval(async () => {
-      try {
-        const r = await fetch(`${API}/documents/${docId}`);
-        if (!r.ok) throw new Error();
-        const doc = await r.json();
-        updateDocInList(doc);
-        if (doc.status !== 'processing') {
-          clearInterval(pollingTimers[docId]);
-          delete pollingTimers[docId];
-          if (doc.status === 'ready') showToast(`"${doc.filename}" is ready!`, 'success');
-          if (selectedDoc && selectedDoc.id === docId) selectDoc(JSON.stringify(doc));
-        }
-      } catch {
-        clearInterval(pollingTimers[docId]);
-        delete pollingTimers[docId];
-      }
-    }, 2500);
-  }
-
-  function updateDocInList(doc) {
-    const el = document.getElementById(`doc-${doc.id}`);
-    if (!el) { loadDocuments(); return; }
-    const badge = el.querySelector('.status-badge');
-    if (badge) { badge.className = `status-badge ${doc.status}`; badge.textContent = doc.status; }
-  }
-
-  // ── Delete ──
-  async function deleteDoc(e, docId) {
-    e.stopPropagation();
-    if (!confirm('Delete this document and all its data?')) return;
-    try {
-      const r = await fetch(`${API}/documents/${docId}`, { method: 'DELETE' });
-      if (!r.ok) throw new Error();
-      if (selectedDoc && selectedDoc.id === docId) {
-        selectedDoc = null;
-        clearMessages();
-        document.getElementById('selectedDocName').textContent = 'No document selected';
-        document.getElementById('selectedDocMeta').textContent = 'Select a ready document from the sidebar';
-        document.getElementById('chatInput').disabled = true;
-        document.getElementById('sendBtn').disabled = true;
-        document.getElementById('chatInput').placeholder = 'Select a document first…';
-      }
-      showToast('Document deleted.', 'success');
-      loadDocuments();
-    } catch {
-      showToast('Failed to delete document.', 'error');
-    }
-  }
-
-  // ── Chat ──
-  document.getElementById('chatInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
-  });
-  document.getElementById('sendBtn').addEventListener('click', sendQuery);
-
-  async function sendQuery() {
-    const input = document.getElementById('chatInput');
-    const question = input.value.trim();
-    if (!question || !selectedDoc) return;
-    input.value = '';
-    autoResize(input);
-
-    hideEmpty();
-    appendMessage('user', question);
-    const typingEl = appendTyping();
-
-    document.getElementById('chatInput').disabled = true;
-    document.getElementById('sendBtn').disabled = true;
-
-    try {
-      const r = await fetch(`${API}/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ document_id: selectedDoc.id, question }),
-      });
-      const data = await r.json();
-      removeTyping(typingEl);
-      if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
-      appendMessage('assistant', data.answer, data.sources || []);
-    } catch (e) {
-      removeTyping(typingEl);
-      appendMessage('assistant', '⚠ Error: ' + e.message);
-    } finally {
-      document.getElementById('chatInput').disabled = false;
-      document.getElementById('sendBtn').disabled = false;
-      document.getElementById('chatInput').focus();
-    }
-  }
-
-  function appendMessage(role, text, sources = []) {
-    const wrap = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `msg ${role}`;
-    div.innerHTML = `
-      <div class="msg-label">${role === 'user' ? 'You' : 'DocMind'}</div>
-      <div class="msg-bubble">${escHtml(text)}</div>
-      ${sources.length ? `<div class="msg-sources">${sources.map((s, i) =>
-        `<button class="source-chip" onclick="showSource(${JSON.stringify(JSON.stringify(s))})">📎 Chunk ${s.chunk_index ?? i}</button>`
-      ).join('')}</div>` : ''}
-    `;
-    wrap.appendChild(div);
-    wrap.scrollTop = wrap.scrollHeight;
-  }
-
-  function appendTyping() {
-    const wrap = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = 'msg assistant';
-    div.id = 'typing-indicator';
-    div.innerHTML = `
-      <div class="msg-label">DocMind</div>
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>`;
-    wrap.appendChild(div);
-    wrap.scrollTop = wrap.scrollHeight;
-    return div;
-  }
-
-  function removeTyping(el) { if (el && el.parentNode) el.remove(); }
-
-  function hideEmpty() {
-    const e = document.getElementById('chatEmpty');
-    if (e) e.style.display = 'none';
-  }
-
-  function clearMessages() {
-    const wrap = document.getElementById('chatMessages');
-    wrap.innerHTML = `<div class="chat-empty" id="chatEmpty">
-      <div class="big-icon">🧠</div>
-      <h3>Ask anything about your document</h3>
-      <p>Upload a document and select it from the sidebar, then ask a question in natural language.</p>
+  el.innerHTML = ids.map(id=>{
+    const d=docs[id];
+    const icon=d.filename.toLowerCase().endsWith('.pdf')?'📕':'📄';
+    const size=d.file_size_bytes?fmtBytes(d.file_size_bytes):'';
+    const active=activeId===id?'active':'';
+    return `<div class="doc-item ${active}" data-id="${esc(id)}">
+      <span class="di">${icon}</span>
+      <div class="info">
+        <div class="name" title="${esc(d.filename)}">${esc(d.filename)}</div>
+        <div class="meta">${esc(size)}</div>
+      </div>
+      <span class="badge ${d.status}">${d.status}</span>
+      <button class="del-btn" data-del="${esc(id)}" title="Delete">🗑</button>
     </div>`;
-  }
+  }).join('');
+}
 
-  // ── Source modal ──
-  function showSource(jsonStr) {
-    const s = JSON.parse(jsonStr);
-    document.getElementById('sourceModalTitle').textContent = `Chunk ${s.chunk_index ?? ''} · Score: ${s.score != null ? s.score.toFixed(3) : 'N/A'}`;
-    document.getElementById('sourceModalBody').textContent = s.chunk_text || '';
-    document.getElementById('sourceModal').classList.add('show');
-  }
-  function closeSourceModal() {
-    document.getElementById('sourceModal').classList.remove('show');
-  }
-  document.getElementById('sourceModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('sourceModal')) closeSourceModal();
-  });
+// Event delegation — one listener handles all doc clicks & delete clicks
+document.getElementById('docList').addEventListener('click', e=>{
+  // delete button
+  const delId = e.target.dataset.del || e.target.closest('[data-del]')?.dataset?.del;
+  if(delId){ deleteDoc(delId); return; }
+  // row click → select
+  const row = e.target.closest('[data-id]');
+  if(row) selectDoc(row.dataset.id);
+});
 
-  // ── Textarea auto-resize ──
-  document.getElementById('chatInput').addEventListener('input', function() { autoResize(this); });
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-  }
+document.getElementById('refreshBtn').addEventListener('click', loadDocs);
 
-  // ── Helpers ──
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-  function formatBytes(b) {
-    if (b < 1024) return b + ' B';
-    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-    return (b / (1024 * 1024)).toFixed(1) + ' MB';
-  }
+function selectDoc(id){
+  const d = docs[id];
+  if(!d) return;
+  activeId = id;
+  renderDocList();
+  document.getElementById('ctName').textContent = d.filename;
+  const ready = d.status === 'ready';
+  document.getElementById('ctMeta').textContent =
+    ready ? 'Ready — ask a question below' :
+    d.status==='processing' ? 'Still processing, please wait…' : 'Processing failed';
+  const qi=document.getElementById('qInput'), sb=document.getElementById('sendBtn');
+  qi.disabled=!ready; sb.disabled=!ready;
+  qi.placeholder=ready?'Ask a question about this document…':'Document not ready yet…';
+  document.getElementById('hint').textContent=ready?'Enter to send · Shift+Enter for newline':'Waiting for document to finish processing…';
+  clearChat();
+}
 
-  // ── Init ──
-  checkHealth();
-  setInterval(checkHealth, 15000);
-  loadDocuments();
+async function deleteDoc(id){
+  if(!confirm('Delete this document and all its data?')) return;
+  try{
+    const r=await fetch(`${API}/documents/${id}`,{method:'DELETE'});
+    if(!r.ok) throw new Error();
+    delete docs[id];
+    if(activeId===id){
+      activeId=null;
+      document.getElementById('ctName').textContent='No document selected';
+      document.getElementById('ctMeta').textContent='Pick a ready document from the sidebar';
+      document.getElementById('qInput').disabled=true;
+      document.getElementById('sendBtn').disabled=true;
+      document.getElementById('qInput').placeholder='Select a ready document first…';
+      clearChat();
+    }
+    renderDocList();
+    toast('Document deleted.','ok');
+  } catch{ toast('Delete failed.','err'); }
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────
+function startPoller(id){
+  if(pollers[id]) return;
+  pollers[id]=setInterval(async()=>{
+    try{
+      const r=await fetch(`${API}/documents/${id}`);
+      if(!r.ok) throw new Error();
+      const d=await r.json();
+      docs[id]=d;
+      renderDocList();
+      if(d.status!=='processing'){
+        clearInterval(pollers[id]); delete pollers[id];
+        if(d.status==='ready'){ toast(`"${d.filename}" is ready!`,'ok'); if(activeId===id) selectDoc(id); }
+      }
+    } catch{ clearInterval(pollers[id]); delete pollers[id]; }
+  },2500);
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────
+document.getElementById('qInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendQuery(); }
+});
+document.getElementById('sendBtn').addEventListener('click', sendQuery);
+document.getElementById('qInput').addEventListener('input',function(){ autoH(this); });
+
+async function sendQuery(){
+  const qi=document.getElementById('qInput');
+  const q=qi.value.trim();
+  if(!q||!activeId) return;
+  qi.value=''; autoH(qi);
+  hideEmptyChat();
+  addMsg('user',q);
+  const typing=addTyping();
+  qi.disabled=true; document.getElementById('sendBtn').disabled=true;
+  try{
+    const r=await fetch(`${API}/query`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({document_id:activeId,question:q})
+    });
+    const data=await r.json();
+    typing.remove();
+    if(!r.ok) throw new Error(data.detail||`HTTP ${r.status}`);
+    addMsg('bot',data.answer,data.sources||[]);
+  } catch(e){
+    typing.remove();
+    addMsg('bot','⚠ Error: '+e.message);
+  } finally{
+    qi.disabled=false; document.getElementById('sendBtn').disabled=false; qi.focus();
+  }
+}
+
+function addMsg(role,text,sources=[]){
+  const wrap=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg '+role;
+  d.innerHTML=`<div class="msg-who">${role==='user'?'You':'DocMind'}</div>
+    <div class="bubble">${esc(text)}</div>
+    ${sources.length?`<div class="sources">${sources.map((s,i)=>`<button class="src-chip" data-chunk='${JSON.stringify(s)}'>📎 Chunk ${s.chunk_index??i}</button>`).join('')}</div>`:''}`;
+  wrap.appendChild(d); wrap.scrollTop=wrap.scrollHeight;
+}
+
+function addTyping(){
+  const wrap=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg bot';
+  d.innerHTML='<div class="msg-who">DocMind</div><div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  wrap.appendChild(d); wrap.scrollTop=wrap.scrollHeight;
+  return d;
+}
+
+function hideEmptyChat(){ const e=document.getElementById('emptyChat'); if(e) e.style.display='none'; }
+function clearChat(){
+  document.getElementById('messages').innerHTML=`<div class="empty-chat" id="emptyChat">
+    <div class="bi">🧠</div><h3>Ask anything about your document</h3>
+    <p>Upload a file, wait for it to be ready, then select it and start asking questions.</p></div>`;
+}
+
+// source chips — event delegation
+document.getElementById('messages').addEventListener('click',e=>{
+  const chip=e.target.closest('.src-chip');
+  if(!chip) return;
+  const s=JSON.parse(chip.dataset.chunk);
+  document.getElementById('srcTitle').textContent=`Chunk ${s.chunk_index??''} · Score: ${s.score!=null?Number(s.score).toFixed(3):'—'}`;
+  document.getElementById('srcBody').textContent=s.chunk_text||'';
+  document.getElementById('srcOverlay').classList.add('show');
+});
+document.getElementById('closeModal').addEventListener('click',()=>document.getElementById('srcOverlay').classList.remove('show'));
+document.getElementById('srcOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('srcOverlay')) document.getElementById('srcOverlay').classList.remove('show'); });
+
+function autoH(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,130)+'px'; }
+
+// ── Init ──────────────────────────────────────────────────────────────────
+loadDocs();
 </script>
 </body>
 </html>
